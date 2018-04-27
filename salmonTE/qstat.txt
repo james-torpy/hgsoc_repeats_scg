@@ -1,0 +1,4 @@
+ 977664 0.00790 CCNE_HRD_P jamtor       r     03/27/2018 15:37:09 long.q@omega-0-7.local            10        
+ 977665 0.00790 PT_TEtrans jamtor       r     03/27/2018 15:37:54 long.q@omega-0-7.local            10        
+1011081 0.00565 QRLOGIN    jamtor       r     04/01/2018 08:35:09 short.q@delta-4-2.local            3        
+1014604 0.00565 QRLOGIN    jamtor       r     04/03/2018 09:39:08 short.q@delta-5-2.local            3        

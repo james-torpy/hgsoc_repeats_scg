@@ -25,7 +25,7 @@ project <- "hgsoc_repeats"
 expName <- "exp9"
 
 Type <- "all"
-descrip <- "SalmonTE_primary_HGSOC_CCNEamp_vs_HRD"
+descrip <- "htseq_EdgeR_primary_HGSOC_CCNEamp_vs_HRD"
 
 EdgeR <- TRUE
 DESeq2 <- FALSE
@@ -164,8 +164,9 @@ if ( EdgeR == TRUE) {
                     ns=asNamespace("pheatmap"))
   
   pdf(file = paste0(plotDir, "/htseq_vs_patch_CCNEamp_vs_HRD_heatmap.pdf"))
-  pheatmap(FC, color = colorRampPalette(c("#08519C", "white", "firebrick3"))(50),
-           display_numbers = as.matrix(ifelse(FDR < 0.1, "*", "")), fontsize = 8)
+  pheatmap(FC, color = colorRampPalette(c("#08519C", "white", "firebrick3"))(100),
+           display_numbers = as.matrix(ifelse(FDR < 0.1, "*", "")), fontsize = 8,
+           breaks = breaks)
   dev.off()
   
 } else if ( DESeq2 == TRUE ) {
@@ -292,7 +293,8 @@ if ( EdgeR == TRUE) {
 ### 5. Create scatterplot with my_logFC and Patch_FC ###
 
 pdf(file = paste0(plotDir, "/htseq_vs_patch_CCNEamp_vs_HRD_scatter.pdf"))
-plot(FC, xlab="my logFC (n=25)", ylab=("Patch logFC (n=75"))
+plot(FC, xlab="my logFC (n=66)", ylab=("Patch logFC (n=66)"), xlim=c(-4, 
+  3), ylim=c(-4, 3))
 dev.off()
 
 # calculate Spearman correlation between my and Patch logFC:
