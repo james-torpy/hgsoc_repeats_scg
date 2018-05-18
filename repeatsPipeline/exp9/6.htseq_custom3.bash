@@ -41,7 +41,7 @@ echo $gff
 echo -e
 
 #perform analysis on bam files using the reference genome:
-htseq_line="htseq-count -f bam -i ID -t exon --stranded=no $bamFile $gff >> $outFile"
+htseq_line="htseq-count -f bam -i ID -t exon --stranded=no -a 0 -m intersection-strict $bamFile $gff >> $outFile"
 echo This is the htseq_line:
 echo $htseq_line
 echo -e

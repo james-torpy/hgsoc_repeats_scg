@@ -5,7 +5,7 @@
 
 # define starting variables:
 project <- "hgsoc_repeats"
-expName <- "rsem_no_mmappers"
+expName <- "exp9"
 
 # define directories:
 #homeDir <- "/share/ScratchGeneral/jamtor/"

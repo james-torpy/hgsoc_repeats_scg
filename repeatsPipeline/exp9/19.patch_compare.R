@@ -163,6 +163,13 @@ if ( EdgeR == TRUE) {
   assignInNamespace(x="draw_colnames", value="draw_colnames_45",
                     ns=asNamespace("pheatmap"))
   
+  # create 100 break intervals between 4 and -4, with 0 as the median:
+  breaks <- unique(c(seq(4, 0, length.out = 50), seq(0, -4, length.out = 51)))
+    
+  # change order of data frame columns:
+  FC <- FC[,c(2,1)]
+  
+  # create heatmap:
   pdf(file = paste0(plotDir, "/htseq_vs_patch_CCNEamp_vs_HRD_heatmap.pdf"))
   pheatmap(FC, color = colorRampPalette(c("#08519C", "white", "firebrick3"))(100),
            display_numbers = as.matrix(ifelse(FDR < 0.1, "*", "")), fontsize = 8,

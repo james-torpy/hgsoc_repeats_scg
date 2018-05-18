@@ -37,7 +37,7 @@ Type <- "custom3"
 sTypes <- c("FT", "HGSOC")
 sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
 names(sGroups) <- sTypes
-descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_chromatin_remodellers"
+descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_LINE1_silencers_extended"
 ################################################################################
 
 ################################################################################
@@ -84,14 +84,14 @@ customSamples <- FALSE
 
 # specify what combination of repeat genes (repeats) and other genes,
 # (all, both, other) should contribute to the results:
-resultTypes <- c("repeats", "other")
+resultTypes <- c("repeats", "gc", "both", "other")
 
 # define sample group to use as control:
 ctl <- "FT"
 
 # specify what FDR and log2 fold change thresholds to use:
-FDRthresh <- 0.1
-FCthresh <- 0
+FDRthresh <- 0.05
+FCthresh <- 1
 
 # specify control genes to include:
 posGeneIDs <- c("ENSG00000111640", "ENSG00000196776")
@@ -99,11 +99,49 @@ posGeneNames <- c("GAPDH", "CD47")
 negGeneIDs <- c("ENSG00000075624", "ENSG00000169919")
 negGeneNames <- c("beta-actin", "GUSB")
 
+# specify other genes to include if necessary:
+otherIDs <- c(# methylation factors:
+            "ENSG00000130816", "ENSG00000119772", "ENSG00000088305", "ENSG00000276043", 
+            "ENSG00000138336", "ENSG00000168769", "ENSG00000187605", "ENSG00000101945",
+            # histone methylation factors:
+            "ENSG00000204371", "ENSG00000143379", "ENSG00000181090", "ENSG00000152455", 
+            "ENSG00000108799", "ENSG00000106462", "ENSG00000074266", "ENSG00000178691", 
+            "ENSG00000008083", "ENSG00000085224", "ENSG00000122565", "ENSG00000196591",
+            "ENSG00000171720",
+            # chromatin remodellers:
+            "ENSG00000128908", "ENSG00000183495", "ENSG00000080603", "ENSG00000153922", 
+            "ENSG00000173575", "ENSG00000170004", "ENSG00000111642", "ENSG00000124177", 
+            "ENSG00000171316", "ENSG00000100888", "ENSG00000177200", "ENSG00000116254", 
+            "ENSG00000080503", "ENSG00000127616", "ENSG00000153147", "ENSG00000102038",
+            "ENSG00000076108",
+            # other L1 repressor components:
+            "ENSG00000128383", "ENSG00000179750", "ENSG00000128394",
+            "ENSG00000125207", "ENSG00000197181", "ENSG00000184571", "ENSG00000134627",
+            "ENSG00000104824", "ENSG00000136436", "ENSG00000161011")
+
+otherSym <- c(# methylation factors:
+              "DNMT1", "DNMT3A", "DNMT3B", "UHRF1", 
+              "TET1", "TET2", "TET3", "SUV39H1",
+              # histone methylation factors:
+              "EHMT2", "SETDB1", "EHMT1", "SUV39H2", 
+              "EZH1", "EZH2", "EED", "SUZ12", 
+              "JARID2", "ATRX", "CBX3", "HDAC2",
+              "HDAC3",
+              # chromatin remodellers:
+              "INO80", "EP400", "SRCAP", "CHD1", 
+              "CHD2", "CHD3", "CHD4", "CHD6", 
+              "CHD7", "CHD8", "CHD9", "CHD5", 
+              "SMARCA2", "SMARCA4", "SMARCA5", "SMARCA1",
+              "BAZ2A",
+              # other L1 repressor components:
+             "APOBEC3A", "APOBEC3B", "APOBEC3F",
+             "PIWIL1", "PIWIL2", "PIWIL3", "PIWIL4",
+              "HNRNPL", "CALCOCO2", "SQSTM1")
+
 # define directories:
 homeDir <- "/Users/jamestorpy/clusterHome/"
 #homeDir <- "/share/ScratchGeneral/jamtor/"
 projectDir <- paste0(homeDir, "/projects/", project)
-refDir <- paste0(projectDir, "/refs/")
 rawDir <- paste0(projectDir, 
                  "/RNA-seq/raw_files/fullsamples/bowtell_primary/")
 resultsDir <- paste0(projectDir, "/RNA-seq/results")
@@ -116,11 +154,6 @@ plotDir <- paste0(resultsDir, "/R/", expName,
 
 system(paste0("mkdir -p ", plotDir))
 system(paste0("mkdir -p ", newRobjectDir))
-
-# specify other genes to include if necessary:
-other_df <- read.csv(paste0(refDir, "/chromatin_remodellers.csv"), header=T)
-otherIDs <- other_df$ensembl_id
-otherSym <- other_df$symbol
 
 
 ################################################################################
@@ -631,6 +664,7 @@ if ( exists("Counts") ) {
 
         # add 'type' identifier column:
         ctlGenes$type <- "ctl"
+        ctlGenes$genes<- rownames(ctlGenes)
 
 
         ##############################################################################
@@ -770,12 +804,15 @@ if ( exists("Counts") ) {
         } else if ("other" %in% resultTypes) {
 
           otherGenes <- allGenes[otherIDs,]
-          rownames(otherGenes) <- otherSym
-
+          otherGenes$type <- "other"
+          otherGenes$genes <- rownames(otherGenes)
+          
           sig_other <- sig_gc[sig_gc$symbol %in% otherSym,]
-
+          sig_other$type <- "other"
+          sig_other$genes <- rownames(sig_other)
           lab <- rbind(sig_other, ctlGenes)
           lab$genes <- rownames(lab)
+          
           otherGenes <- rbind(otherGenes, ctlGenes)
 
           # combine 'threshold' and 'type' columns:
@@ -785,14 +822,14 @@ if ( exists("Counts") ) {
           # plot on volcano plot:
           p <- ggplot(data=otherGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
           p <- p + geom_point(data=otherGenes)
-          p <- p + geom_text_repel(data=lab, aes(label=genes))
+          p <- p + geom_text_repel(data=lab, aes(label=symbol))
           p <- p + theme(legend.position =  "none")
           p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
           # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
-#          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "firebrick1"))
-          p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-            "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
+          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
+            "dodgerblue1", "firebrick1"))
+          #p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
+          #  "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
           #p <- p +  xlim(c(-2, 2))
           if (length(FCthresh) == 0) {
             if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))) {

@@ -23,9 +23,11 @@ library(reshape2)
 project <- "hgsoc_repeats"
 expName <- "exp9"
 
+primaryOnly = TRUE
+
 # define directories:
-#homeDir <- "/Users/jamestorpy/clusterHome/"
-homeDir <- "/share/ScratchGeneral/jamtor/"
+homeDir <- "/Users/jamestorpy/clusterHome/"
+#homeDir <- "/share/ScratchGeneral/jamtor/"
 projectDir <- paste0(homeDir, "projects/", project, 
   "/RNA-seq/")
 htseqDir <- paste0(projectDir, "/results/htseq/", 
@@ -40,9 +42,9 @@ plotDir <- paste0(projectDir, "/results/R/", expName,
   "/plots/QC/")
 rawDir <- paste0(projectDir, 
   "/raw_files/fullsamples/bowtell_primary/")
-gencodeDir <- paste0(homeDir, "/genomes/hg38_ercc/")
+gencodeDir <- paste0("/home/jamtor/genomes/hg38_ercc/")
 gencodeName <- "gencode_v24_hg38_annotation.gtf"
-htseqDir <- paste0(resultsDir, "/htseq/", expName, 
+htseqDir <- paste0(projectDir, "/results/htseq/", expName, 
   "/")
 
 # create plotDir:
@@ -56,6 +58,10 @@ gcCounts <- readRDS(file=paste0(RobjectDir,
   "/gc_allcounts.htseq.rds"))
 rownames(gcCounts) <- gcCounts$gene_id
 gcCounts <- subset(gcCounts, select=-gene_id)
+
+if ( primaryOnly ) {
+  gcCounts <- gcCounts[,grep("FT|PT", colnames(gcCounts))]
+}
 
 # define gencode variable:
 gencodeFile <- paste0(gencodeDir, gencodeName)
@@ -126,6 +132,10 @@ Counts[[3]] <- apply(
 Counts[[4]] <- readRDS(file=paste0(RobjectDir, 
   "/all_allcounts.htseq.rds"))
 
+if ( primaryOnly ) {
+  Counts[[4]] <- Counts[[4]][grep("FT|PT", names(Counts[[4]]))]
+}
+
 
 ### 3. Load STAR gc and ribo logs and fetch total 
 # reads mapped ###
@@ -162,6 +172,10 @@ sampleNames <- readRDS(paste0(RobjectDir, "goodFiles.rds"))
 #  "/completed_files.txt"))[,1])
 #sampleNames <- c(sampleNames[1:34], sampleNames[36:55])
 
+if ( primaryOnly ) {
+  sampleNames <- sampleNames[grep("FT|PT", sampleNames)]
+}
+
 for (i in 1:length(sampleNames)) {
   if (i==1) {
     print(sampleNames[i])
@@ -188,6 +202,18 @@ for (i in 1:length(gcSTARfiles)) {
   }
 }
 names(gcMapped) <- colnames(gcCounts)
+
+# change gcCounts colnames to file ids:
+m <- match(
+  gsub(
+    "\\_[a-z][a-z][A-Z][A-Z]", "",
+    gsub(
+      "\\_[A-Z][A-Z]", "", colnames(gcCounts)
+    )
+  ), Key$V4
+)
+
+sampleNames <- Key$V3[m]
 
 for (i in 1:length(sampleNames)) {
   if (i==1) {
@@ -274,14 +300,24 @@ for (i in 1:2) {
 }
 
 
-
-pdf(file = paste0(plotDir, "compBarplotCounts.pdf"), 
-  height=20, width=35)
+if ( primaryOnly ) {
+  pdf(file = paste0(plotDir, "compBarplotCounts_primary.pdf"), 
+      height=20, width=35)
+} else {
+  pdf(file = paste0(plotDir, "compBarplotCounts.pdf"), 
+      height=20, width=35)
+}
 Plots[[1]]
 dev.off()
 
-pdf(file = paste0(plotDir, "compBarplotPercent.pdf"), 
-  height=20, width=35)
+if ( primaryOnly ) {
+  pdf(file = paste0(plotDir, "compBarplotPercent_primary.pdf"), 
+      height=20, width=35)
+} else {
+  pdf(file = paste0(plotDir, "compBarplotPercent.pdf"), 
+      height=20, width=35)
+}
+
 Plots[[2]]
 dev.off()
   

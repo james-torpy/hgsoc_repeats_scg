@@ -70,7 +70,7 @@ Type <- "custom3"
 sTypes <- c("FT", "HGSOC")
 sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
 names(sGroups) <- sTypes
-descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_LINE1_silencers"
+descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_LINE1_silencers_extended"
 ################################################################################
 
 ################################################################################
@@ -102,11 +102,11 @@ ctl <- "FT"
 
 # specify what combination of repeat genes (repeats) and others (other),
 # should contribute to the results:
-resultTypes <- c("repeats", "all", "other")
+resultTypes <- c("repeats", "other")
 
 # specify what FDR and log2 fold change thresholds to use:
 FDRthresh <- 0.1
-FCthresh <- 0
+FCthresh <- 0.6
 
 # specify control genes to include:
 posGeneIDs <- c("ENSG00000111640", "ENSG00000196776")
@@ -115,16 +115,41 @@ negGeneIDs <- c("ENSG00000075624", "ENSG00000169919")
 negGeneNames <- c("beta-actin", "GUSB")
 
 # specify other genes to include if necessary:
-#otherIDs <- c("ENSG00000130816", "ENSG00000119772", "ENSG00000088305", "ENSG00000276043", 
-#            "ENSG00000138336", "ENSG00000168769", "ENSG00000187605", "ENSG00000101945")
+otherIDs <- c(# methylation factors:
+            "ENSG00000130816", "ENSG00000119772", "ENSG00000088305", "ENSG00000276043", 
+            "ENSG00000138336", "ENSG00000168769", "ENSG00000187605", "ENSG00000101945",
+            # histone methylation factors:
+            "ENSG00000204371", "ENSG00000143379", "ENSG00000181090", "ENSG00000152455", 
+            "ENSG00000108799", "ENSG00000106462", "ENSG00000074266", "ENSG00000178691", 
+            "ENSG00000008083", "ENSG00000085224", "ENSG00000122565", "ENSG00000196591",
+            "ENSG00000171720",
+            # chromatin remodellers:
+            "ENSG00000128908", "ENSG00000183495", "ENSG00000080603", "ENSG00000153922", 
+            "ENSG00000173575", "ENSG00000170004", "ENSG00000111642", "ENSG00000124177", 
+            "ENSG00000171316", "ENSG00000100888", "ENSG00000177200", "ENSG00000116254", 
+            "ENSG00000080503", "ENSG00000127616", "ENSG00000153147", "ENSG00000102038",
+            # other L1 repressor components:
+            "ENSG00000128383", "ENSG00000179750", "ENSG00000128394",
+            "ENSG00000125207", "ENSG00000197181", "ENSG00000184571", "ENSG00000134627",
+            "ENSG00000104824", "ENSG00000136436", "ENSG00000161011")
 
-#otherSym <- c("DNMT1", "DNMT3A", "DNMT3B", "UHRF1", "TET1", "TET2", "TET3", "SUV39H1")
-
-#otherIDs <- c("ENSG00000128383", "ENSG00000179750", "ENSG00000128394")
-#otherSym <- c("APOBEC3A", "APOBEC3B", "APOBEC3F")
-
-otherIDs <- c("ENSG00000104824", " ENSG00000136436", "ENSG00000161011")
-otherSym <- c("HNRNPL", "NPD52", "p62")
+otherSym <- c(# methylation factors:
+              "DNMT1", "DNMT3A", "DNMT3B", "UHRF1", 
+              "TET1", "TET2", "TET3", "SUV39H1",
+              # histone methylation factors:
+              "EHMT2", "SETDB1", "EHMT1", "SUV39H2", 
+              "EZH1", "EZH2", "EED", "SUZ12", 
+              "JARID2", "ATRX", "CBX3", "HDAC2",
+              "HDAC3",
+              # chromatin remodellers:
+              "INO80", "EP400", "SRCAP", "CHD1", 
+              "CHD2", "CHD3", "CHD4", "CHD6", 
+              "CHD7", "CHD8", "CHD9", "CHD5", 
+              "SMARCA2", "SMARCA4", "SMARCA5", "SMARCA1",
+              # other L1 repressor components:
+             "APOBEC3A", "APOBEC3B", "APOBEC3F",
+             "PIWIL1", "PIWIL2", "PIWIL3", "PIWIL4",
+              "HNRNPL", "CALCOCO2", "SQSTM1")
 
 # define directories:
 homeDir <- "/Users/jamestorpy/clusterHome/"
@@ -752,22 +777,22 @@ if ( exists("Counts") ) {
             p <- p + theme(legend.position =  "none")
             p <- p + labs(x="log2 fold change   vs FT control", y="-log10   FDR")
             if (length(FCthresh) == 0) {
-              if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf"))) {
-                print(paste0(plotDir, "/",  Type,  "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf"))
+              if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))) {
+                print(paste0(plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))
                 p
               } else {
-                print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf"))
-                pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf"))
+                print(paste0("Creating  ",plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))
+                pdf(file = paste0(plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))
                 print(p)
                 dev.off()
               }
             } else {
-              if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf"))) {
-                print(paste0(plotDir, "/",  Type,  "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf already exists"))
+              if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))) {
+                print(paste0(plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))
                 p
               } else {
-                print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf"))
-                pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR_10e_neg15_", comp, "_allGenes.pdf"))
+                print(paste0("Creating  ", plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))
+                pdf(file = paste0(plotDir,   "/", Type,  "_volcano_FDR_", FDRthresh, "_FC_", FCthresh, "_", comp, "_allGenes.pdf"))
                 print(p)
                 dev.off()
               }
@@ -777,6 +802,9 @@ if ( exists("Counts") ) {
           if ("other" %in% resultTypes) {
             
             ### 6. Calculate differential expression values of other genes ###
+            
+            mods <- c("INO80", "EP400", "SRCAP", "CHD1", "CHD2", "CHD3", "CHD4", "CHD6", "CHD7", "CHD8", "CHD9", "CHD5", "SMARCA2", "SMARCA4", "SMARCA5", "SMARCA1")
+            
             
             # create otherGenes df:
             otherGenes <- allGenes[otherIDs,]
@@ -814,7 +842,8 @@ if ( exists("Counts") ) {
             p <- p + geom_text_repel(data=otherGenes, aes(label=genes))
             p <- p + theme(legend.position = "none")
             p <- p + labs(x="log2 fold change vs FT control", y="-log10   FDR")
-            p <- p +  xlim(c(-5, 5))
+            #p <- p +  xlim(c(-5, 5))
+            p <- p +  ylim(c(0, 10))
             if (length(FCthresh) == 0) {
               if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other.pdf"))) {
                 print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other.pdf"))

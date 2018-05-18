@@ -90,8 +90,8 @@ resultTypes <- c("repeats", "other")
 ctl <- "FT"
 
 # specify what FDR and log2 fold change thresholds to use:
-FDRthresh <- 0.1
-FCthresh <- 0
+FDRthresh <- 0.0001
+FCthresh <- 3
 
 # specify control genes to include:
 posGeneIDs <- c("ENSG00000111640", "ENSG00000196776")
@@ -103,7 +103,7 @@ negGeneNames <- c("beta-actin", "GUSB")
 homeDir <- "/Users/jamestorpy/clusterHome/"
 #homeDir <- "/share/ScratchGeneral/jamtor/"
 projectDir <- paste0(homeDir, "/projects/", project)
-refDir <- paste0(projectDir, "/refs/")
+refDir <- paste0(projectDir, "/RNA-seq/refs/")
 rawDir <- paste0(projectDir, 
                  "/RNA-seq/raw_files/fullsamples/bowtell_primary/")
 resultsDir <- paste0(projectDir, "/RNA-seq/results")
@@ -159,7 +159,7 @@ if ( count_tool=="EdgeR" ) {
     
     print("Loading EdgeR counts data frame...")
     Counts <- readRDS(paste0(RobjectDir, "/", Type, "_", count_tool, 
-                           "_counts.rds"))
+                             "_counts.rds"))
   }
   
 } else if ( count_tool=="SalmonTE" ) {
@@ -189,17 +189,17 @@ if ( count_tool=="EdgeR" ) {
 
 # checkpoint to ensure Counts was loaded effectively:
 if ( exists("Counts") ) {
-    
+  
   # if necessary, select primary samples only:
-  if ( primaryOnly == TRUE) {
-      Counts <- Counts[,grep("PT|FT", colnames(Counts))]
-    }
-
+  if ( primaryOnly == TRUE ) {
+    Counts <- Counts[,grep("PT|FT", colnames(Counts))]
+  }
+  
   # select custom samples:
   if (customSamples) {
     Counts <- Counts[,colnames(Counts) %in% cus]
   }
-
+  
   # re-categorize samples as HRD, CCNE_amp, both_drivers or unknown_drivers:
   if ( cat_by_driver ) {
     # load in sample key for categories homologous repair deficient (HRD) and 
@@ -246,7 +246,7 @@ if ( exists("Counts") ) {
       colnames(Counts) <- gsub(n, names(sGroups)[i], colnames(Counts))
     }
   }
-    
+  
   # eliminate lowly expressed genes (rows where there are less than 3 counts 
   # where df > 4):
   print(paste0("No. rows before filtering is: ", nrow(Counts)))
@@ -255,19 +255,19 @@ if ( exists("Counts") ) {
     dplyr::filter(rowSums(Counts > 5) >= (ncol(Counts)/3)) %>%
     column_to_rownames('gene_id')
   print(paste0("No. rows after  filtering: ", nrow(Counts)))
-    
-    
+  
+  
   ############################################################################
   ### 2. Perform pre-normalisation PCA and RLE plots ###
   ############################################################################
-    
+  
   # create pre-normalised PCA plot from counts and plot:
   if (ncol(Counts) > nrow(Counts)) {
     pca <- prcomp(Counts)
   } else {
     pca <- princomp(Counts)	  
   }
-    
+  
   if (file.exists(paste0(plotDir, "/", Type, "_pcaCompsPrenormGC.pdf"))) {
     print(paste0(plotDir, "/", Type, "_pcaCompsPrenormGC.pdf already exists,
                  no need to create"))
@@ -277,14 +277,14 @@ if ( exists("Counts") ) {
     plot(pca)
     dev.off()
   }
-    
+  
   # change the order of columns of Counts to alphabetical order:
   Counts <- Counts[,order(
     gsub(
       "AOCS.*_[0-9][0-9][0-9]_", "", colnames(Counts)
     )
   )]
-    
+  
   # define sample groups:
   splt <- unlist(
     lapply(
@@ -295,7 +295,7 @@ if ( exists("Counts") ) {
       ), length
     )
   )
-    
+  
   for (i in 1:length(splt)) {
     if (i==1) {
       typeF <- c(rep(names(splt)[i], splt[i]))
@@ -304,7 +304,7 @@ if ( exists("Counts") ) {
     }
   }
   levels(typeF) <- sTypes
-    
+  
   sampleNos <- unlist(
     lapply(
       split(
@@ -329,7 +329,7 @@ if ( exists("Counts") ) {
   # create pre-norm RLE plot:
   if (file.exists(paste0(plotDir, "/", Type, "_RLEPrenormGC.pdf"))) {
     print(paste0(plotDir, "/", Type, "_RLEPrenormGC.pdf already exists, 
-               no need to create"))
+                 no need to create"))
   } else {
     print(paste0("Creating ", plotDir, "/", Type, "_RLEPrenormGC.pdf"))
     par(mar=c(1,1,1,1))
@@ -341,7 +341,7 @@ if ( exists("Counts") ) {
   # create RUVseq pre-norm PCA:
   if (file.exists(paste0(plotDir, "/", Type, "_pcaPrenormGC.pdf"))) {
     print(paste0(plotDir, "/", Type, "_pcaPrenormGC.pdf already exists, 
-               no need to create"))
+                 no need to create"))
   } else {
     print(paste0("Creating ", plotDir, "/", Type, "_pcaPrenormGC.pdf"))
     pdf(file = paste0(plotDir, "/", Type, "_pcaPrenormGC.pdf"), height = 10, 
@@ -349,8 +349,8 @@ if ( exists("Counts") ) {
     plotPCA(set, cex=0.7)
     dev.off()
   }
-    
-
+  
+  
   ##############################################################################
   ### 3. perform normalisation and DE on counts:
   ##############################################################################
@@ -501,7 +501,7 @@ if ( exists("Counts") ) {
         
         allGenes$gene_id <- egENSEMBL$gene_id[match(rownames(allGenes), egENSEMBL$ensembl_id)]
         allGenes$symbol <- egSYMBOL$symbol[match(allGenes$gene_id, egSYMBOL$gene_id)]
-
+        
         if (!(ctlInd==1)) {
           if (i==1) {
             allGenesList <- list(allGenes)
@@ -516,7 +516,7 @@ if ( exists("Counts") ) {
             allGenesList[[i]] <- allGenes
           }
         }
-
+        
         # create threshold column for FC/FDR cutoff:
         if (length(FCthresh) == 0) {
           sigGenes <- filter(allGenes, FDR < FDRthresh)
@@ -534,7 +534,7 @@ if ( exists("Counts") ) {
         # define repeat and sig DE repeat dfs:
         repGenes <- allGenes[grep("ENS",  rownames(allGenes), invert = T),]
         print(repGenes)
-
+        
         # add 'type' identifier column:
         repGenes$type <- "repeat"
         
@@ -572,10 +572,10 @@ if ( exists("Counts") ) {
         ##############################################################################
         
         gcGenes <- allGenes[grep("ENS",  rownames(allGenes)),]
-
+        
         # add 'type' identifier column:
         gcGenes$type <- "gc"
-
+        
         sig_gc <- subset(allGenes, threshold == T)
         
         if (!(ctlInd==1)) {
@@ -591,12 +591,12 @@ if ( exists("Counts") ) {
             sig_gc_GenesList[[i]] <- sig_gc
           }
         }
-
-
+        
+        
         ##############################################################################
         ### 6. Create positive and negative control genes data frame:
         ##############################################################################
-
+        
         # include the control genes for labelling:
         for (j in 1:length(posGeneIDs)) {
           if (j==1) {
@@ -626,27 +626,28 @@ if ( exists("Counts") ) {
         if (nrow(negGenes[negGenes$FDR< FDRthresh,])>0) {
           negGenes[negGenes$FDR<  FDRthresh,]$threshold <-  "NEGSIG"
         }
-
+        
         ctlGenes <- rbind(posGenes, negGenes)
-
+        ctlGenes$genes <- rownames(ctlGenes)
+        
         # add 'type' identifier column:
         ctlGenes$type <- "ctl"
-
-
+        
+        
         ##############################################################################
         ### 7. Create volcano plots:
         ##############################################################################
         
         if ("both" %in% resultTypes) {
-        
+          
           lab <- rbind(sig_rep, ctlGenes)
           lab$genes <- rownames(lab)
           bothGenes <- rbind(rbind(repGenes, gcGenes), ctlGenes)
-
+          
           # combine 'threshold' and 'type' columns:
           bothGenes$type_thresh <- paste0(bothGenes$type, "_", bothGenes$threshold)
           lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-
+          
           # plot on volcano plot:
           p <- ggplot(data=bothGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
           p <- p + geom_point(data=bothGenes)
@@ -655,9 +656,9 @@ if ( exists("Counts") ) {
           p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
           # key for colours = c("neg_ctls", "pos_ctls", "neg_reps", "gc", "gc", "pos_reps")
           #p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "#C6C6C6", "#C6C6C6", "firebrick1"))
+          #            "dodgerblue1", "#C6C6C6", "#C6C6C6", "firebrick1"))
           p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-            "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
+                                                  "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
           #p <- p +  xlim(c(-2, 2))
           if (length(FCthresh) == 0) {
             if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_all_genes.pdf"))) {
@@ -679,190 +680,198 @@ if ( exists("Counts") ) {
               print(p)
               dev.off()
             }
+            
+          }
           
-        }
-        
-        if ("repeats" %in% resultTypes) {
-          lab <- rbind(sig_rep, ctlGenes)
-          lab$genes <- rownames(lab)
-          repGenes <- rbind(repGenes, ctlGenes)
-
-          # combine 'threshold' and 'type' columns:
-          repGenes$type_thresh <- paste0(repGenes$type, "_", repGenes$threshold)
-          lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-
-          # plot on volcano plot:
-          p <- ggplot(data=repGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-          p <- p + geom_point(data=repGenes)
-          p <- p + geom_text_repel(data=lab, aes(label=genes))
-          p <- p + theme(legend.position =  "none")
-          p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
-          # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
-#          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "firebrick1"))
-          p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-            "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
-          #p <- p +  xlim(c(-2, 2))
-          if (length(FCthresh) == 0) {
-            if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_reps.pdf"))) {
-              print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_reps.pdf"))
-              p
+          if ("repeats" %in% resultTypes) {
+            lab <- rbind(sig_rep, ctlGenes)
+            lab$genes <- rownames(lab)
+            repGenes <- rbind(repGenes, ctlGenes)
+            
+            # combine 'threshold' and 'type' columns:
+            repGenes$type_thresh <- paste0(repGenes$type, "_", repGenes$threshold)
+            lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
+            
+            # plot on volcano plot:
+            p <- ggplot(data=repGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
+            p <- p + geom_point(data=repGenes)
+            p <- p + geom_text_repel(data=lab, aes(label=genes))
+            p <- p + theme(legend.position =  "none")
+            p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
+            # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
+            #          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
+            #            "dodgerblue1", "firebrick1"))
+            p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
+                                                    "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
+            #p <- p +  xlim(c(-2, 2))
+            if (length(FCthresh) == 0) {
+              if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_reps.pdf"))) {
+                print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_reps.pdf"))
+                p
+              } else {
+                print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_reps.pdf"))
+                pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_reps.pdf"))
+                print(p)
+                dev.off()
+              }
             } else {
-              print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_reps.pdf"))
-              pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_reps.pdf"))
-              print(p)
-              dev.off()
+              if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))) {
+                print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf already exists"))
+                p
+              } else {
+                print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))
+                pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))
+                print(p)
+                dev.off()
+              }
+            } 
+            
+          } else if ("gc" %in% resultTypes) {
+            
+            lab <- rbind(sig_gc, ctlGenes)
+            lab$genes <- rownames(lab)
+            bothGenes <- rbind(gcGenes, ctlGenes)
+            
+            # combine 'threshold' and 'type' columns:
+            gcGenes$type_thresh <- paste0(gcGenes$type, "_", gcGenes$threshold)
+            lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
+            
+            # plot on volcano plot:
+            p <- ggplot(data=gcGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
+            p <- p + geom_point(data=gcGenes)
+            p <- p + geom_text_repel(data=lab, aes(label=genes))
+            p <- p + theme(legend.position =  "none")
+            # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
+            #          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
+            #            "dodgerblue1", "firebrick1"))
+            p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
+                                                    "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
+            #p <- p +  xlim(c(-2, 2))
+            if (length(FCthresh) == 0) {
+              if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_gc_genes.pdf"))) {
+                print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_gc_genes.pdf"))
+                p
+              } else {
+                print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_gc_genes.pdf"))
+                pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_gc_genes.pdf"))
+                print(p)
+                dev.off()
+              }
+            } else {
+              if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))) {
+                print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf already exists"))
+                p
+              } else {
+                print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))
+                pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))
+                print(p)
+                dev.off()
+              }
             }
-          } else {
-            if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))) {
-              print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf already exists"))
-              p
+          } else if ("other" %in% resultTypes) {
+            
+            otherGenes <- allGenes[otherIDs,]
+            otherGenes$type <- "other"
+            otherGenes$genes <- rownames(otherGenes)
+            # only keep genes which have annotated symbols:
+            otherGenes <- otherGenes[!is.na(otherGenes$symbol),]
+            
+            sig_other <- sig_gc[sig_gc$symbol %in% otherSym,]
+            sig_other$type <- "other"
+            sig_other$genes <- rownames(sig_other)
+            lab <- rbind(sig_other, ctlGenes)
+            lab$genes <- rownames(lab)
+            # only keep genes which have annotated symbols:
+            lab <- lab[!is.na(lab$symbol),]
+            
+            otherGenes <- rbind(otherGenes, ctlGenes)
+            
+            # combine 'threshold' and 'type' columns:
+            otherGenes$type_thresh <- paste0(otherGenes$type, "_", otherGenes$threshold)
+            lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
+            
+            # plot on volcano plot:
+            p <- ggplot(data=otherGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
+            p <- p + geom_point(data=otherGenes)
+            p <- p + geom_text_repel(data=lab, aes(label=symbol))
+            p <- p + theme(legend.position =  "none")
+            p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
+            # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
+            #          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
+            #            "dodgerblue1", "firebrick1"))
+            #p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
+            #                                        "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
+            #p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", "darkolivegreen3", "forestgreen"))
+            #p <- p +  xlim(c(-2, 2))
+            if (length(FCthresh) == 0) {
+              if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))) {
+                print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))
+                p
+              } else {
+                print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_other_genes.pdf"))
+                pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_other_genes.pdf"))
+                print(p)
+                dev.off()
+              }
             } else {
-              print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))
-              pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))
-              print(p)
-              dev.off()
-            }
-          } 
-
-        } else if ("gc" %in% resultTypes) {
-
-          lab <- rbind(sig_gc, ctlGenes)
-          lab$genes <- rownames(lab)
-          bothGenes <- rbind(gcGenes, ctlGenes)
-
-          # combine 'threshold' and 'type' columns:
-          gcGenes$type_thresh <- paste0(gcGenes$type, "_", gcGenes$threshold)
-          lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-
-          # plot on volcano plot:
-          p <- ggplot(data=gcGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-          p <- p + geom_point(data=gcGenes)
-          p <- p + geom_text_repel(data=lab, aes(label=genes))
-          p <- p + theme(legend.position =  "none")
-          # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
-#          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "firebrick1"))
-          p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-            "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
-          #p <- p +  xlim(c(-2, 2))
-          if (length(FCthresh) == 0) {
-            if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_gc_genes.pdf"))) {
-              print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_gc_genes.pdf"))
-              p
-            } else {
-              print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_gc_genes.pdf"))
-              pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_gc_genes.pdf"))
-              print(p)
-              dev.off()
-            }
-          } else {
-            if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))) {
-              print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf already exists"))
-              p
-            } else {
-              print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))
-              pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))
-              print(p)
-              dev.off()
+              if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))) {
+                print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf already exists"))
+                p
+              } else {
+                print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))
+                pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))
+                print(p)
+                dev.off()
+              }
             }
           }
-        } else if ("other" %in% resultTypes) {
-
-          otherGenes <- allGenes[otherIDs,]
-          rownames(otherGenes) <- otherSym
-
-          sig_other <- sig_gc[sig_gc$symbol %in% otherSym,]
-
-          lab <- rbind(sig_other, ctlGenes)
-          lab$genes <- rownames(lab)
-          otherGenes <- rbind(otherGenes, ctlGenes)
-
-          # combine 'threshold' and 'type' columns:
-          otherGenes$type_thresh <- paste0(otherGenes$type, "_", otherGenes$threshold)
-          lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-
-          # plot on volcano plot:
-          p <- ggplot(data=otherGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-          p <- p + geom_point(data=otherGenes)
-          p <- p + geom_text_repel(data=lab, aes(label=genes))
-          p <- p + theme(legend.position =  "none")
-          p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
-          # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
-#          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "firebrick1"))
-          p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-            "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
-          #p <- p +  xlim(c(-2, 2))
-          if (length(FCthresh) == 0) {
-            if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))) {
-              print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))
-              p
-            } else {
-              print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_other_genes.pdf"))
-              pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_other_genes.pdf"))
-              print(p)
-              dev.off()
-            }
-          } else {
-            if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))) {
-              print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf already exists"))
-              p
-            } else {
-              print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))
-              pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))
-              print(p)
-              dev.off()
-            }
-          }
+          con <- c(rep(0, (ctlInd - 1) ), -1, rep(0, (ncol(design) - ctlInd)))
         }
-        con <- c(rep(0, (ctlInd - 1) ), -1, rep(0, (ncol(design) - ctlInd)))
+      } 
+      
+      ##############################################################################
+      ### 8. Save all results dfs ###
+      ##############################################################################
+      
+      # remove the NULL list dfs created when avoiding clt vs ctl:
+      if (length(sTypes)>2) {
+        allReps <- allReps[-ctlInd]
+        sigReps <- sigReps[-ctlInd]
+        # name the list elements:
+        names(allReps) <- paste0(sTypes[-ctlInd], "_vs_", ctl)
+        names(sigReps) <- paste0(sTypes[-ctlInd], "_vs_", ctl)
       }
-    } 
-
-    ##############################################################################
-    ### 8. Save all results dfs ###
-    ##############################################################################
-    
-    # remove the NULL list dfs created when avoiding clt vs ctl:
-    if (length(sTypes)>2) {
-      allReps <- allReps[-ctlInd]
-      sigReps <- sigReps[-ctlInd]
-      # name the list elements:
-      names(allReps) <- paste0(sTypes[-ctlInd], "_vs_", ctl)
-      names(sigReps) <- paste0(sTypes[-ctlInd], "_vs_", ctl)
+      
+      if (file.exists(paste0(newRobjectDir, "/", Type, "_DEallReps.rds"))) {
+        print(paste0(newRobjectDir, "/", Type, "_DEallReps.rds already exists"))
+      } else {
+        saveRDS(allReps, file=paste0(newRobjectDir, "/", Type, "_DEallReps.rds"))
+      }
+      
+      if (file.exists(paste0(newRobjectDir, "/", Type, "_DEsigReps.rds"))) {
+        print(paste0(newRobjectDir, "/", Type, "_DEsigReps.rds already exists"))
+      } else {
+        saveRDS(sigReps, file=paste0(newRobjectDir, "/", Type, "_DEsigReps.rds"))
+      }
+      
+      if (file.exists(paste0(newRobjectDir, "/", Type, "_DEallGenes.rds"))) {
+        print(paste0(newRobjectDir, "/", Type, "_DEallGenes.rds already exists"))
+      } else {
+        saveRDS(allGenes, file=paste0(newRobjectDir, "/", Type, "_DEallGenes.rds"))
+      }
+      
+      if (file.exists(paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds"))) {
+        print(paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds already exists"))
+      } else {
+        saveRDS(sigGenes, file=paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds"))
+      }
     }
-    
-    if (file.exists(paste0(newRobjectDir, "/", Type, "_DEallReps.rds"))) {
-      print(paste0(newRobjectDir, "/", Type, "_DEallReps.rds already exists"))
+    # if values of con, design are not correct, print error message: 
     } else {
-      saveRDS(allReps, file=paste0(newRobjectDir, "/", Type, "_DEallReps.rds"))
+      print("Check values and run again")
     }
-    
-    if (file.exists(paste0(newRobjectDir, "/", Type, "_DEsigReps.rds"))) {
-      print(paste0(newRobjectDir, "/", Type, "_DEsigReps.rds already exists"))
-    } else {
-      saveRDS(sigReps, file=paste0(newRobjectDir, "/", Type, "_DEsigReps.rds"))
-    }
-    
-    if (file.exists(paste0(newRobjectDir, "/", Type, "_DEallGenes.rds"))) {
-      print(paste0(newRobjectDir, "/", Type, "_DEallGenes.rds already exists"))
-    } else {
-      saveRDS(allGenes, file=paste0(newRobjectDir, "/", Type, "_DEallGenes.rds"))
-    }
-    
-    if (file.exists(paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds"))) {
-      print(paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds already exists"))
-    } else {
-      saveRDS(sigGenes, file=paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds"))
-    }   
-
-  # if values of con, design are not correct, print error message: 
-  } else {
-    print("Check values and run again")
-  }
-
-# if Counts was not loaded, print error message:
+  
+  # if Counts was not loaded, print error message:
 } else {
   print("Error - Counts did not load")     
 }
