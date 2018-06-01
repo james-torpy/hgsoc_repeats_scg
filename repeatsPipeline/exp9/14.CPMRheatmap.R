@@ -52,10 +52,11 @@ STypes <- unique(
 )
 
 # define repeat species of heatmap as those with FDR<0.05 and FC>1 in any sample comparison with controls
-sigReps <- readRDS(file=paste0(RobjectDir, "/", Type, "_DEsigReps.rds"))
+sigRepNames <- as.character(read.table(paste0("/Users/jamestorpy/clusterHome/projects/hgsoc_repeats/RNA-seq/results/R/exp9/plots/DEplots/htseq_EdgeR_primary_HGSOC_vs_FT/sig_rep_list.txt"))[,1])
+#sigReps <- readRDS(file=paste0(RobjectDir, "/", Type, "_DEsigReps.rds"))
 #sigReps <- c("(CATTC)n", "Helitron1Na_Mam", "Helitron1Nb_Mam", "L1HS", "L1MD3", "L1P2", "L1P4d", "L1PA2", 
 #             "AluYi6", "GSATX", "GSAT","HSATII", "HSAT4", "HSAT5", "ACRO1", "FAM", "REP522", "CER", "SATR2")
-sigRepNames <- rownames(sigReps[[1]])
+#sigRepNames <- rownames(sigReps[[1]])
 Counts <- Counts[sigRepNames,]
 
 
