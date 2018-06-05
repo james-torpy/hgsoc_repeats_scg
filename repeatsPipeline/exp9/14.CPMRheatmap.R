@@ -20,7 +20,7 @@ library(pheatmap)
 project <- "hgsoc_repeats"
 expName <- "exp9"
 
-Type <- "custom3"
+Type <- "gc"
 
 # define directories:
 homeDir <- "/Users/jamestorpy/clusterHome/"
@@ -67,6 +67,8 @@ rSizes <- apply(Counts, 2, sum)
 
 # calculate CPMRs
 CPMR <- as.data.frame(t(t(Counts)/rSizes)*1000000)
+
+saveRDS(CPMR, file=paste0(resultsDir, "/R/exp9/plots/DEplots/htseq_EdgeR_primary_HGSOC_vs_FT/gc_CPMR.rds"))
 
 # log CPMRs:
 logCPMR = log10(CPMR+1)
