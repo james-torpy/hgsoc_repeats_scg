@@ -34,17 +34,28 @@ Type <- "custom3"
 
 ################################################################################
 ### htseq_EdgeR_primary_HGSOC_vs_FT ###
-sTypes <- c("FT", "HGSOC")
-sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
-names(sGroups) <- sTypes
-descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_chromatin_remodellers"
+# sTypes <- c("FT", "HGSOC")
+# sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
+# names(sGroups) <- sTypes
+# descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_chromatin_remodellers"
 ################################################################################
 
 ################################################################################
 ### htseq_EdgeR_primary_HGSOC_CCNEamp_vs_HRD ###
 
-#sTypes <- c("bothDrivers", "FT", "HRD", "CCNEamp", "unknown_driver")
-#descrip <- "htseq_EdgeR_primary_HGSOC_CCNEamp_vs_HRD"
+sTypes <- c("bothDrivers", "FT", "HRD", "CCNEamp", "unknown_driver")
+descrip <- "htseq_EdgeR_primary_HGSOC_unknown_driver_vs_HRD"
+sGroups <- list("bothDrivers", "FT", "HRD", "CCNEamp", "unknown_driver")
+names(sGroups) <- sTypes
+################################################################################
+
+################################################################################
+### htseq_EdgeR_primary_HGSOC_HRD_CCNEamp_vs_unknown_driver ###
+
+# sTypes <- c("known_driver", "FT", "unknown_driver")
+# descrip <- "htseq_EdgeR_primary_HGSOC_known_driver_vs_unknown_driver"
+# sGroups <- list(c("bothDrivers", "CCNEamp", "HRD"), "FT", "unknown_driver")
+# names(sGroups) <- sTypes
 ################################################################################
 
 ################################################################################
@@ -66,10 +77,10 @@ descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_chromatin_remodellers"
 
 ################################################################################
 ### htseq_EdgeR_primary_HGSOC_vs_FT_with_LINE1_silencers ###
-sTypes <- c("FT", "HGSOC")
-sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
-names(sGroups) <- sTypes
-descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_LINE1_silencers"
+# sTypes <- c("FT", "HGSOC")
+# sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
+# names(sGroups) <- sTypes
+# descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_LINE1_silencers"
 ################################################################################
 
 ################################################################################
@@ -83,7 +94,7 @@ descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_LINE1_silencers"
 
 # define comparison parameters:
 primaryOnly <- TRUE
-cat_by_driver <- FALSE
+cat_by_driver <- TRUE
 EDAnormalise <- FALSE
 count_tool <- "EdgeR"
 customSamples <- FALSE
@@ -93,10 +104,10 @@ customSamples <- FALSE
 
 # specify what combination of repeat genes (repeats) and other genes,
 # (all, both, other) should contribute to the results:
-resultTypes <- c("repeats", "other")
+resultTypes <- c("repeats")
 
 # define sample group to use as control:
-ctl <- "FT"
+ctl <- "HRD"
 
 # specify what FDR and log2 fold change thresholds to use:
 FDRthresh <- 0.1
@@ -127,9 +138,9 @@ system(paste0("mkdir -p ", plotDir))
 system(paste0("mkdir -p ", newRobjectDir))
 
 # specify other genes to include if necessary:
-other_df <- read.csv(paste0(refDir, "/chromatin_remodellers.csv"), header=T)
-otherIDs <- other_df$ensembl_id
-otherSym <- other_df$symbol
+# other_df <- read.csv(paste0(refDir, "/chromatin_remodellers.csv"), header=T)
+# otherIDs <- other_df$ensembl_id
+# otherSym <- other_df$symbol
 
 
 ################################################################################
@@ -209,7 +220,7 @@ if ( exists("Counts") ) {
     Counts <- Counts[,colnames(Counts) %in% cus]
   }
 
-  # re-categorize samples as HRD, CCNE_amp, both_drivers or unknown_drivers:
+  # re-categorize samples as HRD, CCNE_amp, both_drivers or unknown_driver:
   if ( cat_by_driver ) {
     # load in sample key for categories homologous repair deficient (HRD) and 
     #cyclin E gain/amplification (CCNE):
@@ -233,7 +244,7 @@ if ( exists("Counts") ) {
         } else if (no %in% CCNEnos & !(no %in% HRDnos)) {
           colnames(Counts)[i] <- paste0(colnames(Counts)[i], "_CCNEamp")
         } else if (!(no %in% HRDnos | no %in% CCNEnos)) {
-          colnames(Counts)[i] <- paste0(colnames(Counts)[i], "_unknown_drivers")
+          colnames(Counts)[i] <- paste0(colnames(Counts)[i], "_unknown_driver")
         }
         colnames(Counts)[i] <- gsub("[a-z].*[A-Z][A-Z]_", "", 
                                     colnames(Counts)[i])
@@ -424,6 +435,7 @@ if ( exists("Counts") ) {
     
     # design matrix labelling all sample types:
     design <- model.matrix(~0+typeF)
+    colnames(design) <- gsub("typeF", "", colnames(design))
     
     # estimate dispersion:
     disp <- estimateDisp(y, design=design)
@@ -457,8 +469,9 @@ if ( exists("Counts") ) {
     dev.off()
   }
   
-  # determine which column has FT control:
-  ctlInd <- grep(ctl, colnames(design))
+  # determine which column has control:
+  ctlInd <- which(colnames(design)==ctl)
+    
   con <- c(rep(0, (ctlInd - 1) ), -1, rep(0, (ncol(design) - ctlInd)))
   
   # put sTypes in alphabetical order:
@@ -688,7 +701,7 @@ if ( exists("Counts") ) {
               print(p)
               dev.off()
             }
-          
+          }
         }
         
         if ("repeats" %in% resultTypes) {
@@ -753,7 +766,7 @@ if ( exists("Counts") ) {
 #          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
 #            "dodgerblue1", "firebrick1"))
           p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-            "darkolivegreen3", "#C6C6C6", "#C6C6C6", "forestgreen"))
+            "darkolivegreen3", "#2b83ba", "#2b83ba", "forestgreen"))
           #p <- p +  xlim(c(-2, 2))
           if (length(FCthresh) == 0) {
             if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_gc_genes.pdf"))) {
