@@ -150,8 +150,11 @@ system(paste0("mkdir -p ", newRobjectDir))
 
 # specify other genes to include if necessary:
 other_df <- read.csv(paste0(refDir, "/liu2018_L1_regulators.csv"), header=T)[,1:3]
-suppressor_df <- other_df[other_df$effect == "suppressor",]
-activator_df <- other_df[other_df$effect == "activator",]
+colnames(other_df) <- c("ensembl_id", "symbol", "type")
+otherIDs <- other_df$ensembl_id
+otherSym <- other_df$symbol
+suppressor_df <- other_df[other_df$type == "suppressor",]
+activator_df <- other_df[other_df$type == "activator",]
 
 
 ################################################################################
@@ -816,32 +819,42 @@ if ( exists("Counts") ) {
             }
           }
         } else if ("other" %in% resultTypes) {
-
-          otherGenes <- allGenes[otherIDs,]
-          rownames(otherGenes) <- otherSym
-
-          sig_other <- sig_gc[sig_gc$symbol %in% otherSym,]
-
-          lab <- rbind(sig_other, ctlGenes)
-          lab$genes <- rownames(lab)
-          otherGenes <- rbind(otherGenes, ctlGenes)
-
+          
+          suppressor_df$ensembl_id <- as.character(suppressor_df$ensembl_id)
+          suppressor_genes <- allGenes[suppressor_df$ensembl_id,]
+          suppressor_genes$ensembl_id <- rownames(suppressor_genes)
+          suppressor_genes <- merge(suppressor_df, suppressor_genes, by.x="ensembl_id", by.y="ensembl_id")
+          suppressor_genes$type <- "suppressor"
+          suppressor_genes <- subset(suppressor_genes, select=-symbol.y)
+          
+          activator_df$ensembl_id <- as.character(activator_df$ensembl_id)
+          activator_genes <- allGenes[activator_df$ensembl_id,]
+          activator_genes$ensembl_id <- rownames(activator_genes)
+          activator_genes <- merge(activator_df, activator_genes, by.x="ensembl_id", by.y="ensembl_id")
+          activator_genes$type <- "activator"
+          activator_genes <- subset(activator_genes, select=-symbol.y)
+          
+          other_genes <- rbind(suppressor_genes, activator_genes)
           # combine 'threshold' and 'type' columns:
-          otherGenes$type_thresh <- paste0(otherGenes$type, "_", otherGenes$threshold)
-          lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
+          other_genes$type_thresh <- paste0(other_genes$type, "_", other_genes$threshold)
+          other_genes$type_thresh <- factor(other_genes$type_thresh, 
+            levels = c("suppressor_FALSE", "activator_FALSE", "suppressor_TRUE", 
+              "activator_TRUE"))
+          
+          lab <- other_genes[other_genes$FDR < FDRthresh,]
 
           # plot on volcano plot:
-          p <- ggplot(data=otherGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-          p <- p + geom_point(data=otherGenes)
-          p <- p + geom_text_repel(data=lab, aes(label=genes))
+          p <- ggplot(data=other_genes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
+          p <- p + geom_point(data=other_genes)
+          p <- p + geom_text_repel(data=lab, aes(label=symbol.x))
           p <- p + theme(legend.position =  "none")
           p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
           # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
 #          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
 #            "dodgerblue1", "firebrick1"))
-          p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-            "darkolivegreen3", "darkorchid1", "darkorchid1", "forestgreen"))
-          #p <- p +  xlim(c(-2, 2))
+          p <- p + scale_colour_manual(values = c("gray81", "gray81",
+            "deepskyblue", "tomato"))
+          p <- p +  xlim(c(-5, 5))
           if (length(FCthresh) == 0) {
             if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))) {
               print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))

@@ -141,12 +141,16 @@ repGenes <- rbind(repGenes, ctlGenes)
 
 # fetch list of DE reps from htseq results not significant in TEtranscripts 
 # results to add for labelling:
-htseq_sig_reps <- read.table(file=paste0(projectDir, 
+htseq_sig_reps <- rownames(read.table(file=paste0(projectDir, 
   "/RNA-seq/results/R/exp9/plots/DEplots/htseq_EdgeR_primary_HGSOC_vs_FT/", 
-  "sig_rep_list.txt"))[,1]
+  "sig_reps_FDR_0.05.txt")))
+# htseq_sig_reps <- htseq_sig_reps[order(htseq_sig_reps$logFC),]
+# htseq_sig_reps <- rbind(htseq_sig_reps[1:20,], htseq_sig_reps[104:124,])
+
 non_sig <- repGenes[repGenes$threshold == "non-significant",]
 htseq_lab <- non_sig[non_sig$symbol %in% htseq_sig_reps,]
-
+htseq_lab <- rbind(htseq_lab[htseq_lab$logFC < -1,], htseq_lab[htseq_lab$logFC >= 1,])
+  
 
 labGenes <- repGenes[grep("non", repGenes$threshold, invert=T),]
 labGenes <- rbind(
@@ -161,25 +165,40 @@ excl <- c("MER", "HERV", "MamRep", "LTR", "Chompy", "UCON", "Ricksha", "X7B",
           "hAT", "THE1", "Looper", "MamGypsy", "Arthur", "Cheshire", "HUERS",
           "L4", "X5B", "FRAM")
 
+labGenes2 <- labGenes
 for ( e in excl ) {
-  labGenes <- labGenes[grep(e, labGenes$symbol, invert=T),]
+  labGenes2 <- labGenes2[grep(e, labGenes2$symbol, invert=T),]
 }
+
+# add some of the top excluded back:
+labGenes3 <- rbind(labGenes2, labGenes[labGenes$padj <= 0.001,])
 
 
 ################################################################################
 ### 2. Create volcano plots ###
 ################################################################################
 
+# without weird reps:
 p <- ggplot(data=repGenes, aes(x=logFC, y=-log10(padj), color=threshold))
 p <- p + geom_point(data=repGenes)
-p <- p + geom_text_repel(data=labGenes, aes(label=symbol))
+p <- p + geom_text_repel(data=labGenes2, aes(label=symbol))
 p <- p + theme(legend.position = "none")
 p <- p + labs(x="log2 fold change vs FT control", y="-log10 adjusted p-value")
-#p <- p +  xlim(c(-5, 5))
-pdf(paste0(plotDir, "/volcano_padj0.1_FC0.pdf"))
+p <- p +  xlim(c(-4, 4))
+pdf(paste0(plotDir, "/volcano_padj0.1.pdf"))
 p
 dev.off()
 
+# with only top weird reps:
+p <- ggplot(data=repGenes, aes(x=logFC, y=-log10(padj), color=threshold))
+p <- p + geom_point(data=repGenes)
+p <- p + geom_text_repel(data=labGenes3, aes(label=symbol))
+p <- p + theme(legend.position = "none")
+p <- p + labs(x="log2 fold change vs FT control", y="-log10 adjusted p-value")
+p <- p +  xlim(c(-4, 4))
+pdf(paste0(plotDir, "/volcano_padj0.1_most_rep_labs.pdf"))
+p
+dev.off()
 
 
 ######

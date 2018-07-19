@@ -9,9 +9,9 @@ project_dir <- paste0(home_dir,
 results_dir <- paste0(project_dir, "results/")
 ref_dir <- paste0(project_dir, "/refs/repeats/")
 Robject_dir <- paste0(project_dir, "/Robjects/")
+
 in_dir <- paste0(results_dir, 
 	"/star/GC/exp9/all_mmappers/prPT8/")
-in_dir2 <- paste0(results_dir, "star/GC/exp9/prPT8")
 
 
 ### 0. Load aligned bam file containing multimapped alignments ###
@@ -44,45 +44,50 @@ reps <- import(paste0(ref_dir, "/human-89.repeats.gtf"))
 # remove odd sequences from reps:
 reps <- reps[grep("M|K|G", seqnames(reps), invert=T)]
 values(reps) <- subset(values(reps), select=type)
-reps <- reps[!(reps$type %in% c("dust", "trf"))]
 
+# create separate L1MD3 annotation:
+L1MD3 <- reduce(reps[reps$type == "L1MD3"])
+
+# remove L1MD3 from reps:
+reps <- reps[reps$type != "L1MD3"]
+
+### PLEASE REDO ABOVE AND SAVE FRESH ###
 save.image(paste0(Robject_dir,
  "/check_multimapper_specificity_image1.RData"))
 
 
-### 1. Load L1MD3 counted reads and check how many other 
+### 1. Isolate L1MD3 reads and check how many other 
 # repeats each maps to ###
 
-L1MD3_reads <- as.character(unique(read.table(paste0(in_dir2, 
-	"/L1MD3_reads.txt"))[,1]))
-
 # identify reads from bam whose best alignments include L1MD3:
-alt_reads <- bam_gr[bam_gr$read_name %in% L1MD3_reads]
+L1MD3_hits <- findOverlaps(bam_gr, L1MD3)
+L1MD3_reads <- bam_gr[queryHits(L1MD3_hits)]
 
-# split into list by read name:
+# identify all reads from bam_gr with same read names as in 
+# L1MD3_reads:
+alt_reads <- bam_gr[bam_gr$read_name %in% L1MD3_reads$read_name]
+
+# remove L1MD3 regions and split into list by read name:
+alt_reads  <- alt_reads[!(start(ranges(alt_reads)) %in% 
+	start(ranges(L1MD3_reads)))]
 alt_read_list <- split(alt_reads, alt_reads$read_name)
+
+# view number of reads with multiple best alignments and number 
+# of alternate best alignments for each read:
+lens <- unlist(lapply(alt_read_list, length))
+names(lens) <- NULL
+lens
+
+# count how many reads align to L1MD3 in total
+L1MD3_split <- split(L1MD3_reads, L1MD3_reads$read_name)
+length(L1MD3_split)
 
 # identify what these reads that map to both L1MD3 and other 
 # regions also map to:
 other_aligns <- lapply(alt_read_list, function(x) {
 	hits <- findOverlaps(x, reps)
-	res <- reps[subjectHits(hits)]
-	res$read_name <- x$read_name
-	if (length(res) < 1) {
-		res <- NULL
-	}
-
-	return(res)
+	return(reps[subjectHits(hits)])
 })
-other_aligns <- other_aligns[!sapply(other_aligns, is.null)]
-
-minus_L1MD3 <- lapply(other_aligns, function(x) {
-	if ( length(unique(x$type)) <= 1) {
-		x <- NULL
-	}
-	return(x)
-})
-minus_L1MD3 <- minus_L1MD3[!sapply(minus_L1MD3, is.null)]
 
 # check what other repeats can be mapped to by reads with best 
 # alignments:
@@ -94,22 +99,7 @@ other_align_classes <- unique(
 names(other_align_classes) <- NULL
 other_align_classes
 
-genes <- c("L1MC4a", "L1MD2", "L1MC3", "L1M4", "(GA)n", "L1MB5")
-
-for ( i in 1:length(minus_L1MD3) ) {
-	for ( j in 1:length(genes) ) {
-		res <- grep(genes[j], minus_L1MD3[[i]]$type)
-		if ( length(res) > 0 ) {
-			print(unique(minus_L1MD3[[i]]$read_name))
-			print(genes[j])
-			print(res)
-		}
-	}
-}
-
-
-alt_read_list[grep("D81P8DQ1:153:C2704ACXX:3:2304:12859:29397", 
-	names(alt_read_list))]
-
 save.image(paste0(Robject_dir,
  "/check_multimapper_specificity_image2.RData"))
+
+
