@@ -21,17 +21,17 @@ library(Rmisc)
 project <- "hgsoc_repeats"
 expName <- "exp9"
 descrip <- paste0("expression_vs_structural_rearrangement_",
-    "cats_indivHGSOC_grouped_unknown_only")
+    "cats_indivHGSOC_3_groups_unknown_only")
 Type <- "custom3"
 metric <- "HGSOC_vs_FT"
 #repeatList <- c("(CATTC)n", "HSATII", "L1M3a", "L1M3c", "L1M4c", "L1M5", "L1M8", "L1MA5", "L1MC")
 repeatPattern <- ""
 FDRthresh <- 0.05
-corr_thresh <- 0.3
+corr_thresh <- 0.2
 remove_samples <- c("pAF", "rcAF")
 
 divide_by_group <- TRUE
-group_no <- 4
+group_no <- 3
 unknown_only <- TRUE
 
 # define plot colours:
@@ -296,11 +296,11 @@ for (m in 1:length(orders)) {
     
     
     ### 4. Plot CPMR vs structural rearrangement for each repeat ###
-    
+
     for (k in 1:length(rpInt)) {
+      print(k)
       if ( length(rpInt) > 0 ) {
         if ( !is.null(rpInt[[k]]) ) {
-          print(k)
           max_CPMR <- max(rpInt[[k]]$mean_CPMR)
           rpName <- gsub("\\(|\\)", "", names(rpInt)[k])
           if ( !file.exists(paste0(plotDir, "/", rpName, "_CPMR_", names(orders)[m], "_", corr_thresh, "_corr_thresh.pdf")) ) {
@@ -321,36 +321,35 @@ for (m in 1:length(orders)) {
             dev.off()
             }
           }
-        }
-        # save all repeat names with CPMR correlated with structural rearrangements to frame:
-        if ( !exists("CPMR_cor") ) {
-          CPMR_cor <- data.frame(names(rpInt)[k], names(orders)[m], cors[names(rpInt)[k]])
-        } else {
-          CPMR_cor[,1] <- as.character(CPMR_cor[,1])
-          CPMR_cor[,2] <- as.character(CPMR_cor[,2])
-          CPMR_cor[,3] <- as.character(CPMR_cor[,3])
-          CPMR_cor[(nrow(CPMR_cor)+1),] <- rep(NA, ncol(CPMR_cor))
-          CPMR_cor[nrow(CPMR_cor), 1] <- names(rpInt)[k]
-          CPMR_cor[(nrow(CPMR_cor)), 2] <- names(orders)[m]
-          CPMR_cor[(nrow(CPMR_cor)), 3] <- cors[names(rpInt)[k]]
-        }
-        
-        # check if repeat is differentially expressed in primary HGSOC vs FT:
-        if ( rpName %in% DEreps ) {
-          if ( !exists("CPMR_cor_DE_rep") ) {
-            CPMR_cor_DE_rep <- data.frame(rpName, names(orders)[m])
+          # save all repeat names with CPMR correlated with structural rearrangements to frame:
+          if ( !exists("CPMR_cor") ) {
+            CPMR_cor <- data.frame(names(rpInt)[k], names(orders)[m], cors[names(rpInt)[k]])
           } else {
-            CPMR_cor_DE_rep[,1] <- as.character(CPMR_cor_DE_rep[,1])
-            CPMR_cor_DE_rep[,2] <- as.character(CPMR_cor_DE_rep[,2])
-            CPMR_cor_DE_rep[(nrow(CPMR_cor_DE_rep)+1),] <- c(NA, NA)
-            CPMR_cor_DE_rep[nrow(CPMR_cor_DE_rep), 1] <- rpName
-            CPMR_cor_DE_rep[(nrow(CPMR_cor_DE_rep)), 2] <- names(orders)[m]
+            CPMR_cor[,1] <- as.character(CPMR_cor[,1])
+            CPMR_cor[,2] <- as.character(CPMR_cor[,2])
+            CPMR_cor[,3] <- as.character(CPMR_cor[,3])
+            CPMR_cor[(nrow(CPMR_cor)+1),] <- rep(NA, ncol(CPMR_cor))
+            CPMR_cor[nrow(CPMR_cor), 1] <- names(rpInt)[k]
+            CPMR_cor[(nrow(CPMR_cor)), 2] <- names(orders)[m]
+            CPMR_cor[(nrow(CPMR_cor)), 3] <- cors[names(rpInt)[k]]
+          }
+          ######
+          # check if repeat is differentially expressed in primary HGSOC vs FT:
+          if ( rpName %in% DEreps ) {
+            if ( !exists("CPMR_cor_DE_rep") ) {
+              CPMR_cor_DE_rep <- data.frame(rpName, names(orders)[m])
+            } else {
+              CPMR_cor_DE_rep[,1] <- as.character(CPMR_cor_DE_rep[,1])
+              CPMR_cor_DE_rep[,2] <- as.character(CPMR_cor_DE_rep[,2])
+              CPMR_cor_DE_rep[(nrow(CPMR_cor_DE_rep)+1),] <- c(NA, NA)
+              CPMR_cor_DE_rep[nrow(CPMR_cor_DE_rep), 1] <- rpName
+              CPMR_cor_DE_rep[(nrow(CPMR_cor_DE_rep)), 2] <- names(orders)[m]
+            }
           }
         }
-      }
+      }    
     }
   }
-  
 }
 
 cors_df <- as.data.frame(t(do.call("rbind", all_cors)))

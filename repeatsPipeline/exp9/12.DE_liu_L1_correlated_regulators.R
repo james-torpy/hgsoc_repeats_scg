@@ -37,45 +37,45 @@ Type <- "custom3"
 # sTypes <- c("FT", "HGSOC")
 # sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
 # names(sGroups) <- sTypes
-# descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_chromatin_remodellers"
+# descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_correlated_liu_L1_regulators"
 ################################################################################
 
 ################################################################################
-### htseq_EdgeR_primary_HGSOC_CCNEamp_vs_HRD ###
+### htseq_EdgeR_primary_HGSOC_vs_HRD ###
 
-# sTypes <- c("bothDrivers", "FT", "HRD", "CCNEamp", "unknown_driver")
-# descrip <- "htseq_EdgeR_primary_HGSOC_unknown_driver_vs_HRD"
-# sGroups <- list("bothDrivers", "FT", "HRD", "CCNEamp", "unknown_driver")
+# sTypes <- c("HRD", "CCNEamp", "unknown")
+# descrip <- "htseq_EdgeR_primary_HGSOC_vs_HRD"
+# sGroups <- list("HRD", "CCNEamp", "unknown")
 # names(sGroups) <- sTypes
 ################################################################################
 
 ################################################################################
-### htseq_EdgeR_primary_HGSOC_unknown_driver_vs_known_driver ###
+### htseq_EdgeR_primary_HGSOC__unknown_driver_vs_known_driver_with_liu_L1_regulators ###
 
-sTypes <- c("known", "FT", "unknown")
-descrip <- "htseq_EdgeR_primary_HGSOC_unknown_driver_vs_known_driver"
-sGroups <- list(c("bothDrivers", "CCNEamp", "HRD"), "FT", "unknown_driver")
-names(sGroups) <- sTypes
-################################################################################
-
-################################################################################
-### htseq_EdgeR_primary_HGSOC_unknown_driver_vs_HRD ###
-
-# sTypes <- c("HRD", "unknown")
-# descrip <- "htseq_EdgeR_primary_HGSOC_unknown_driver_vs_HRD"
-# sGroups <- list("HRD", "unknown")
+# sTypes <- c("known", "unknown")
+# descrip <- "htseq_EdgeR_primary_HGSOC_unknown_driver_vs_known_driver_with_liu_L1_regulators"
+# sGroups <- list(c("bothDrivers", "CCNEamp", "HRD"), "unknown")
 # names(sGroups) <- sTypes
-# remove_groups <- c("FT", "bothDrivers", "CCNEamp")
 ################################################################################
 
 ################################################################################
 ### htseq_EdgeR_HGSOC_drug_cats_vs_FT ###
 
-#sTypes <- c("FT", "primary_resistant", "acquired_resistant", "drug_responders", 
+# sTypes <- c("FT", "primary_resistant", "acquired_resistant", "drug_responders",
 #  "recurrent_ascites", "metastatic")
-#sGroups <- list("FT", "prPT", "rfPT", "arPT", "mrPT", "erPT", "rcAF", "msST")
-#names(sGroups) <- sTypes
-#descrip <- "htseq_EdgeR_HGSOC_drug_cats_vs_FT"
+# sGroups <- list("FT", "prPT", "rfPT", "arPT", "mrPT", "erPT", "rcAF", "msST")
+# names(sGroups) <- sTypes
+# descrip <- "htseq_EdgeR_HGSOC_drug_cats_vs_FT"
+################################################################################
+
+################################################################################
+### htseq_EdgeR_HGSOC_prim_drug_cats ###
+
+sTypes <- c("primary_resistant", "acquired_resistant", "multiple_responders",
+            "extreme_responders")
+sGroups <- list(c("prPT", "rfPT"), "arPT", "mrPT", "erPT")
+names(sGroups) <- sTypes
+descrip <- "htseq_EdgeR_HGSOC_prim_drug_cats"
 ################################################################################
 
 ################################################################################
@@ -88,11 +88,27 @@ names(sGroups) <- sTypes
 ################################################################################
 
 ################################################################################
+### SalmonTE_primary_HGSOC_CCNEamp_vs_HRD ###
+
+#sTypes <- c("bothDrivers", "FT", "HRD", "CCNEamp", "unknown_driver")
+#descrip <- "SalmonTE_primary_HGSOC_CCNEamp_vs_HRD"
+################################################################################
+
+################################################################################
 ### htseq_EdgeR_primary_HGSOC_vs_FT_with_liu_L1_regulators ###
 # sTypes <- c("FT", "HGSOC")
 # sGroups <- list("FT", c("prPT", "rfPT", "arPT", "mrPT", "erPT"))
 # names(sGroups) <- sTypes
 # descrip <- "htseq_EdgeR_primary_HGSOC_vs_FT_with_liu_L1_regulators"
+# otherType <- c("suppressor", "activator")
+################################################################################
+
+################################################################################
+### htseq_EdgeR_primary_HGSOC_vs_CCNE1_with_liu_L1_regulators ###
+# sTypes <- c("CCNEamp", "HRD", "unknown")
+# sGroups <- list("CCNEamp", "HRD", "unknown")
+# names(sGroups) <- sTypes
+# descrip <- "htseq_EdgeR_primary_HGSOC_vs_CCNE1_with_liu_L1_regulators"
 # otherType <- c("suppressor", "activator")
 ################################################################################
 
@@ -107,7 +123,7 @@ names(sGroups) <- sTypes
 
 # define comparison parameters:
 primaryOnly <- TRUE
-cat_by_driver <- TRUE
+cat_by_driver <- FALSE
 EDAnormalise <- FALSE
 count_tool <- "EdgeR"
 customSamples <- FALSE
@@ -118,13 +134,13 @@ include_ctls <- FALSE
 
 # specify what combination of repeat genes (repeats) and other genes,
 # (all, both, other) should contribute to the results:
-resultTypes <- c("repeats")
+resultTypes <- c("repeats", "other")
 
 # define sample group to use as control:
-ctl <- "known"
+ctl <- "acquired_resistant"
 
 # specify what FDR and log2 fold change thresholds to use:
-FDRthresh <- 0.5
+FDRthresh <- 0.3
 FCthresh <- 0
 
 # specify control genes to include:
@@ -152,7 +168,11 @@ system(paste0("mkdir -p ", plotDir))
 system(paste0("mkdir -p ", newRobjectDir))
 
 # specify other genes to include if necessary:
-other_df <- read.csv(paste0(refDir, "/liu2018_L1_regulators.csv"), header=T)[,1:3]
+other_df <- read.table(paste0(refDir, "/correlated_liu_2018_L1_regulators.txt"), 
+  header=T, sep = "\t")
+
+otherIDs <- other_df$ensembl_id
+otherSym <- other_df$symbol
 suppressor_df <- other_df[other_df$effect == "suppressor",]
 activator_df <- other_df[other_df$effect == "activator",]
 
@@ -220,7 +240,7 @@ if ( count_tool=="EdgeR" ) {
                                   "SalmonTE_counts.rds"))
   }
 }
-
+    
 # if necessary, select primary samples only:
 if ( primaryOnly == TRUE) {
     Counts <- Counts[,grep("PT|FT", colnames(Counts))]
@@ -277,13 +297,14 @@ for (i in 1:length(sGroups)) {
     colnames(Counts) <- gsub(n, names(sGroups)[i], colnames(Counts))
   }
 }
-  
-# remove groups that are not needed:
-for ( r in remove_groups ) {
-  print(r)
-  Counts <- Counts[,grep(r, colnames(Counts), invert = T)] 
-}
 
+# remove samples not belonging to any group:
+if ( cat_by_driver ) {
+  Counts <- Counts[,gsub("AOCS_[0-9][0-9][0-9]_", "", colnames(Counts)) %in% names(sGroups)]
+} else {
+  Counts <- Counts[,gsub("AOCS_[0-9][0-9][0-9]_", "", colnames(Counts)) %in% names(sGroups)]
+}
+  
 # eliminate lowly expressed genes (rows where there are less than 3 counts 
 # where df > 4):
 print(paste0("No. rows before filtering is: ", nrow(Counts)))
@@ -425,27 +446,6 @@ fit <- glmFit(disp, design=design, robust=TRUE)
 saveRDS(fit, file=paste0(newRobjectDir, "/", Type, "DEfit.rds"))
 save.image(paste0(newRobjectDir, "/", Type, "DEdone.rds"))
 
-
-# create post-norm RLE plot:
-if (file.exists(paste0(plotDir, "/", Type, "_RLElaneNormGC.pdf"))) {
-  print(paste0(plotDir, "/", Type, "_RLElaneNormGC.pdf already exists, no need to create"))
-} else {
-  print(paste0("Creating ", plotDir, "/", Type, "_RLElaneNormGC.pdf"))
-  pdf(file = paste0(plotDir, "/", Type, "_RLElaneNormGC.pdf"))
-  plotRLE(nSet, outline=FALSE, ylim=c(-4, 4))
-  dev.off()
-}
-
-# create post-norm PCA:
-if (file.exists(paste0(plotDir, "/", Type, "_pcalaneNormGC.pdf"))) {
-  print(paste0(plotDir, "/", Type, "_pcalaneNormGC.pdf already exists, no need to create"))
-} else {
-  print(paste0("Creating ", plotDir, "/", Type, "_pcalaneNormGC.pdf"))
-  pdf(file = paste0(plotDir, "/", Type, "_pcalaneNormGC.pdf"), height = 15, width = 15)
-  plotPCA(nSet, cex=0.7)
-  dev.off()
-}
-
 # determine which column has control:
 ctlInd <- which(colnames(design)==ctl)
   
@@ -453,6 +453,7 @@ con <- c(rep(0, (ctlInd - 1) ), -1, rep(0, (ncol(design) - ctlInd)))
 
 # put sTypes in alphabetical order:
 sTypes <- sTypes[order(sTypes)]
+
 
 # check parameters and give the user the option to continue or not:
 writeLines("\n")
@@ -531,6 +532,9 @@ for (i in 1:ncol(design)) {
 
     # add 'type' identifier column:
     repGenes$type <- "repeat"
+    
+    repGenes <- repGenes[grep("^L1", rownames(repGenes)),]
+    repGenes$symbol <- rownames(repGenes)
     
     sig_rep <- subset(repGenes, threshold == T)
     
@@ -630,240 +634,66 @@ for (i in 1:ncol(design)) {
     ##############################################################################
     ### 7. Create volcano plots:
     ##############################################################################
+        
     
-    if ("both" %in% resultTypes) {
+    suppressor_df$ensembl_id <- as.character(suppressor_df$ensembl_id)
+    suppressor_genes <- allGenes[suppressor_df$ensembl_id,]
+    suppressor_genes$ensembl_id <- rownames(suppressor_genes)
+    suppressor_genes <- merge(suppressor_df, suppressor_genes, by.x="ensembl_id", by.y="ensembl_id")
+    suppressor_genes$type <- "suppressor"
+    suppressor_genes <- subset(suppressor_genes, select=-symbol.y)
     
-      lab <- rbind(sig_rep, ctlGenes)
-      lab$genes <- rownames(lab)
-      bothGenes <- rbind(rbind(repGenes, gcGenes), ctlGenes)
-
-      # combine 'threshold' and 'type' columns:
-      bothGenes$type_thresh <- paste0(bothGenes$type, "_", bothGenes$threshold)
-      lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-
-      # plot on volcano plot:
-      p <- ggplot(data=bothGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-      p <- p + geom_point(data=bothGenes)
-      p <- p + geom_text_repel(data=lab, aes(label=genes))
-      p <- p + theme(legend.position =  "none")
-      p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
-      # key for colours = c("neg_ctls", "pos_ctls", "neg_reps", "gc", "gc", "pos_reps")
-      #p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "#C6C6C6", "#C6C6C6", "firebrick1"))
-      p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-        "darkolivegreen3", "darkorchid1", "darkorchid1", "forestgreen"))
-      #p <- p +  xlim(c(-2, 2))
-      if (length(FCthresh) == 0) {
-        if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_all_genes.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_all_genes.pdf"))
-          p
-        } else {
-          print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_all_genes.pdf"))
-          pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_all_genes.pdf"))
-          print(p)
-          dev.off()
-        }
-      } else {
-        if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_all_genes.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_all_genes.pdf already exists"))
-          p
-        } else {
-          print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_all_genes.pdf"))
-          pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_all_genes.pdf"))
-          print(p)
-          dev.off()
-        }
-      }
-    }
+    activator_df$ensembl_id <- as.character(activator_df$ensembl_id)
+    activator_genes <- allGenes[activator_df$ensembl_id,]
+    activator_genes$ensembl_id <- rownames(activator_genes)
+    activator_genes <- merge(activator_df, activator_genes, by.x="ensembl_id", by.y="ensembl_id")
+    activator_genes$type <- "activator"
+    activator_genes <- subset(activator_genes, select=-symbol.y)
     
-    if ("repeats" %in% resultTypes) {
-      
-      if (include_ctls) {
+    other_genes <- rbind(suppressor_genes, activator_genes)
+    # combine 'threshold' and 'type' columns:
+    other_genes$type_thresh <- paste0(other_genes$type, "_", other_genes$threshold)
+    other_genes$type_thresh <- factor(other_genes$type_thresh, 
+                                      levels = c("suppressor_FALSE", "activator_FALSE", "suppressor_TRUE", 
+                                                 "activator_TRUE"))
+    
+    lab <- other_genes[other_genes$FDR < FDRthresh,]
+    rownames(lab) <- lab$ensembl_id
+    lab <- subset(lab, select = -c(ensembl_id, effect, type_thresh))
+    lab <- lab[,c(2:7, 1, 8:9)]
+    colnames(lab)[7] <- "symbol"
+    lab <- rbind(lab, sig_rep)
         
-        lab <- rbind(sig_rep, ctlGenes)
-        lab$genes <- rownames(lab)
-        repGenes <- rbind(repGenes, ctlGenes)
-        
-        # combine 'threshold' and 'type' columns:
-        repGenes$type_thresh <- paste0(repGenes$type, "_", repGenes$threshold)
-        lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-        
-      } else {
-        
-        lab <- sig_rep
-        lab$genes <- rownames(lab)
-        
-        # combine 'threshold' and 'type' columns:
-        repGenes$type_thresh <- paste0(repGenes$type, "_", repGenes$threshold)
-        lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-        
-      }
-      
-
-      # plot on volcano plot:
-      p <- ggplot(data=repGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-      p <- p + geom_point(data=repGenes)
-      p <- p + geom_text_repel(data=lab, aes(label=genes))
-      p <- p + theme(legend.position =  "none")
-      p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
-      # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
-#          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "firebrick1"))
-      p <- p + scale_colour_manual(values = c("darkolivegreen3", "darkorchid1", 
-        "darkolivegreen3", "darkorchid1", "darkorchid1", "forestgreen"))
-      p <- p +  xlim(c(-4, 4))
-      if (length(FCthresh) == 0) {
-        if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_reps.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_reps.pdf"))
-          p
-        } else {
-          print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_reps.pdf"))
-          pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_reps.pdf"))
-          print(p)
-          dev.off()
-        }
-      } else {
-        if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf already exists"))
-          p
-        } else {
-          print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))
-          pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_reps.pdf"))
-          print(p)
-          dev.off()
-        }
-      } 
-
-    } else if ("gc" %in% resultTypes) {
-
-      lab <- rbind(sig_gc, ctlGenes)
-      lab$genes <- rownames(lab)
-      bothGenes <- rbind(gcGenes, ctlGenes)
-
-      # combine 'threshold' and 'type' columns:
-      gcGenes$type_thresh <- paste0(gcGenes$type, "_", gcGenes$threshold)
-      lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-
-      # plot on volcano plot:
-      p <- ggplot(data=gcGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-      p <- p + geom_point(data=gcGenes)
-      p <- p + geom_text_repel(data=lab, aes(label=genes))
-      p <- p + theme(legend.position =  "none")
-      # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
-#          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "firebrick1"))
-      p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-        "darkolivegreen3", "#2b83ba", "#2b83ba", "forestgreen"))
-      #p <- p +  xlim(c(-2, 2))
-      if (length(FCthresh) == 0) {
-        if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_gc_genes.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_gc_genes.pdf"))
-          p
-        } else {
-          print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_gc_genes.pdf"))
-          pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_gc_genes.pdf"))
-          print(p)
-          dev.off()
-        }
-      } else {
-        if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf already exists"))
-          p
-        } else {
-          print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))
-          pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_gc_genes.pdf"))
-          print(p)
-          dev.off()
-        }
-      }
-    } else if ("other" %in% resultTypes) {
-
-      otherGenes <- allGenes[otherIDs,]
-      rownames(otherGenes) <- otherSym
-
-      sig_other <- sig_gc[sig_gc$symbol %in% otherSym,]
-
-      lab <- rbind(sig_other, ctlGenes)
-      lab$genes <- rownames(lab)
-      otherGenes <- rbind(otherGenes, ctlGenes)
-
-      # combine 'threshold' and 'type' columns:
-      otherGenes$type_thresh <- paste0(otherGenes$type, "_", otherGenes$threshold)
-      lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
-
-      # plot on volcano plot:
-      p <- ggplot(data=otherGenes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
-      p <- p + geom_point(data=otherGenes)
-      p <- p + geom_text_repel(data=lab, aes(label=genes))
-      p <- p + theme(legend.position =  "none")
-      p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
-      # key for colours = c("neg_ctls", "pos_ctls", "neg_gc", "pos_gc")
-#          p <- p + scale_colour_manual(values = c("#114477", "firebrick4", 
-#            "dodgerblue1", "firebrick1"))
-      p <- p + scale_colour_manual(values = c("darkorchid1", "darkorchid4", 
-        "darkolivegreen3", "darkorchid1", "darkorchid1", "forestgreen"))
-      #p <- p +  xlim(c(-2, 2))
-      if (length(FCthresh) == 0) {
-        if (file.exists(paste0(plotDir,   "/", Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR_",   FDRthresh, "_", comp, "_other_genes.pdf"))
-          p
-        } else {
-          print(paste0("Creating  ",plotDir, "/", Type,    "_volcano_FDR_", FDRthresh, "_", comp, "_other_genes.pdf"))
-          pdf(file = paste0(plotDir, "/",   Type,  "_volcano_FDR_",  FDRthresh, "_", comp, "_other_genes.pdf"))
-          print(p)
-          dev.off()
-        }
-      } else {
-        if (file.exists(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))) {
-          print(paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf already exists"))
-          p
-        } else {
-          print(paste0("Creating  ", plotDir, "/",  Type,  "_volcano_FDR", FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))
-          pdf(file = paste0(plotDir, "/",  Type,  "_volcano_FDR",   FDRthresh, "_FC", FCthresh, "_", comp, "_other_genes.pdf"))
-          print(p)
-          dev.off()
-        }
-      }
-    }
-    con <- c(rep(0, (ctlInd - 1) ), -1, rep(0, (ncol(design) - ctlInd)))
+    # combine 'threshold' and 'type' columns:
+    repGenes$type_thresh <- paste0(repGenes$type, "_", repGenes$threshold)
+    repGenes <- repGenes[grep("^L1", rownames(repGenes)),]
+    other_genes <- subset(other_genes, select = -c(ensembl_id, effect))
+    other_genes <- other_genes[,c(2:7, 1, 8:10)]
+    colnames(other_genes)[7] <- "symbol"
+    Genes <- rbind(repGenes, other_genes)
+    
+    lab$type_thresh <- paste0(lab$type, "_", lab$threshold)
+    
+    Genes$type_thresh <- factor(Genes$type_thresh, levels = c("repeat_FALSE", 
+      "suppressor_FALSE", "activator_FALSE", "repeat_TRUE", "suppressor_TRUE",
+      "activator_TRUE"))
+    
+    cols <- brewer.pal(6,"Set3")
+    cols <- c(cols[1], cols)
+    cols2 <- c("#B4D8B5", "lightpink", "#4CD64C", "deepskyblue", "#FB8072")
+    
+    # plot on volcano plot:
+    p <- ggplot(data=Genes, aes( x=logFC, y=-log10(FDR), color=type_thresh))
+    p <- p + geom_point(data=Genes)
+    p <- p + geom_text_repel(data=lab, aes(label=symbol))
+    # p <- p + theme(legend.position =  "none")
+    p <- p + labs(x="log2 fold change vs FT control", y="-log10 FDR")
+    p <- p + scale_colour_manual(values = cols2)
+    p <- p +  xlim(c(-4, 4))
+    
+    pdf(file = paste0(plotDir, "/", comp, "_FDR_", FDRthresh, ".pdf"))  
+    print(p)
+    dev.off()
   }
-} 
-
-##############################################################################
-### 8. Save all results dfs ###
-##############################################################################
-
-# remove the NULL list dfs created when avoiding clt vs ctl:
-if (length(sTypes)>2) {
-  allReps <- allReps[-ctlInd]
-  sigReps <- sigReps[-ctlInd]
-  # name the list elements:
-  names(allReps) <- paste0(sTypes[-ctlInd], "_vs_", ctl)
-  names(sigReps) <- paste0(sTypes[-ctlInd], "_vs_", ctl)
+  con <- c(rep(0, (ctlInd - 1) ), -1, rep(0, (ncol(design) - ctlInd)))
 }
-
-if (file.exists(paste0(newRobjectDir, "/", Type, "_DEallReps.rds"))) {
-  print(paste0(newRobjectDir, "/", Type, "_DEallReps.rds already exists"))
-} else {
-  saveRDS(allReps, file=paste0(newRobjectDir, "/", Type, "_DEallReps.rds"))
-}
-
-if (file.exists(paste0(newRobjectDir, "/", Type, "_DEsigReps.rds"))) {
-  print(paste0(newRobjectDir, "/", Type, "_DEsigReps.rds already exists"))
-} else {
-  saveRDS(sigReps, file=paste0(newRobjectDir, "/", Type, "_DEsigReps.rds"))
-}
-
-if (file.exists(paste0(newRobjectDir, "/", Type, "_DEallGenes.rds"))) {
-  print(paste0(newRobjectDir, "/", Type, "_DEallGenes.rds already exists"))
-} else {
-  saveRDS(allGenes, file=paste0(newRobjectDir, "/", Type, "_DEallGenes.rds"))
-}
-
-if (file.exists(paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds"))) {
-  print(paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds already exists"))
-} else {
-  saveRDS(sigGenes, file=paste0(newRobjectDir, "/", Type, "_DEsigGenes.rds"))
-}   
-
-
