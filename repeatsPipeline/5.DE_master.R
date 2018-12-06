@@ -24,7 +24,6 @@ library(org.Hs.eg.db)
 
 # define starting variables:
 project <- "hgsoc_repeats"
-expName <- "exp9"
 Type <- "custom3"
 
 
@@ -109,12 +108,8 @@ names(sGroups) <- sTypes
 primaryOnly <- TRUE
 cat_by_driver <- TRUE
 EDAnormalise <- FALSE
-count_tool <- "EdgeR"
-customSamples <- FALSE
 include_ctls <- FALSE
-
-# define custom samples if needed:
-#cus <- c("")
+DE_tool <- "EdgeR"
 
 # specify what combination of repeat genes (repeats) and other genes,
 # (all, both, other) should contribute to the results:
@@ -141,20 +136,13 @@ refDir <- paste0(projectDir, "/RNA-seq/refs/")
 rawDir <- paste0(projectDir, 
                  "/RNA-seq/raw_files/fullsamples/bowtell_primary/")
 resultsDir <- paste0(projectDir, "/RNA-seq/results")
-RobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/",
-                     expName, "/")
+RobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/")
 newRobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/",
-                        expName, "/", descrip, "/")
-plotDir <- paste0(resultsDir, "/R/", expName,
-                  "/plots/DEplots/", descrip, "/")
+                        descrip, "/")
+plotDir <- paste0(resultsDir, "/R/plots/DEplots/", descrip, "/")
 
 system(paste0("mkdir -p ", plotDir))
 system(paste0("mkdir -p ", newRobjectDir))
-
-# specify other genes to include if necessary:
-other_df <- read.csv(paste0(refDir, "/liu2018_L1_regulators.csv"), header=T)[,1:3]
-suppressor_df <- other_df[other_df$effect == "suppressor",]
-activator_df <- other_df[other_df$effect == "activator",]
 
 
 ################################################################################
@@ -172,75 +160,56 @@ counts_bind <- function(counts1, counts2) {
   return(subset(counts_all, select=-gene_id))
 }
 
-if ( count_tool=="EdgeR" ) {
+if ( !file.exists(paste0(RobjectDir, "/", Type, "_", DE_tool, 
+                         "_counts.rds")) ) {
   
-  if ( !file.exists(paste0(RobjectDir, "/", Type, "_", count_tool, 
-                           "_counts.rds")) ) {
-    
-    writeLines("\n")
-    print("EdgeR counts data frame does not exist, creating now...")
-    
-    custom3Counts <- readRDS(paste0(RobjectDir, "/", Type, 
-                                    "_allcounts.htseq.rds"))
-    gcCounts <- readRDS(paste0(RobjectDir, "/gc_allcounts.htseq.rds"))
-    
-    # append gcCounts to custom3Counts:
-    Counts <- counts_bind(custom3Counts, gcCounts)
-    
-    saveRDS(Counts, paste0(RobjectDir, "/", Type, "_", count_tool, 
-                           "_counts.rds"))
-  } else {
-    
-    print("Loading EdgeR counts data frame...")
-    Counts <- readRDS(paste0(RobjectDir, "/", Type, "_", count_tool, 
-                           "_counts.rds"))
-  }
+  writeLines("\n")
+  print("EdgeR counts data frame does not exist, creating now...")
   
-} else if ( count_tool=="SalmonTE" ) {
+  custom3Counts <- readRDS(paste0(RobjectDir, "/", Type, 
+                                  "_allcounts.htseq.rds"))
+  gcCounts <- readRDS(paste0(RobjectDir, "/gc_allcounts.htseq.rds"))
   
-  if ( !file.exists(paste0(RobjectDir, "/", Type, 
-                           "_", count_tool, "_counts.rds")) ) {
-    
-    writeLines("\n")
-    print("SalmonTE counts data frame does not exist, creating now...")
-    
-    custom3Counts <- readRDS(paste0(RobjectDir, "/", Type, 
-                                    "_counts.SalmonTE.rds"))
-    gcCounts <- readRDS(paste0(RobjectDir, "/gc_counts.Salmon.rds"))
-    
-    # append gcCounts to custom3Counts:
-    Counts <- counts_bind(custom3Counts, gcCounts)
-    
-    saveRDS(Counts, (paste0(RobjectDir, "/", Type, "SalmonTE_counts.rds")))
-    
-  } else {
-    
-    print("Loading SalmonTE counts data frame...")
-    Counts <- readRDS(file=paste0(RobjectDir, "/", Type, 
-                                  "SalmonTE_counts.rds"))
-  }
+  # append gcCounts to custom3Counts:
+  Counts <- counts_bind(custom3Counts, gcCounts)
+  
+  saveRDS(Counts, paste0(RobjectDir, "/", Type, "_", count_tool, 
+                         "_counts.rds"))
+} else {
+  
+  print("Loading EdgeR counts data frame...")
+  Counts <- readRDS(paste0(RobjectDir, "/", Type, "_", count_tool, 
+                         "_counts.rds"))
 }
 
+# load key to match up Counts colnames to IDs:
+sampleKey <- read.table(paste0(refDir, "/custom_sampleKey.txt"), sep="\t", as.is=T,
+                        header=F)
+ 
 # if necessary, select primary samples only:
 if ( primaryOnly == TRUE) {
-    Counts <- Counts[,grep("PT|FT", colnames(Counts))]
-  }
-
-# select custom samples:
-if (customSamples) {
-  Counts <- Counts[,colnames(Counts) %in% cus]
+  Counts <- Counts[,grep("PT|FT", colnames(Counts))]
 }
 
 # re-categorize samples as HRD, CCNE_amp, both_drivers or unknown_driver:
 if ( cat_by_driver ) {
   # load in sample key for categories homologous repair deficient (HRD) and 
   #cyclin E gain/amplification (CCNE):
-  HRDkey <- read.table(paste0(rawDir, "/hrd_samples.txt"), header=F, sep="\t")
-  HRDnos <- gsub("AOCS_", "", HRDkey[,1])
-  CCNEkey <- read.table(paste0(rawDir, "/ccne_gain_or_amp_samples.txt"), 
-                        header=F, sep="\t")
-  CCNEnos <- gsub("AOCS_", "", CCNEkey[,1])
-  Counts <- Counts[,grep("rcAF|pAF|msST", colnames(Counts), invert=T)]
+  driverKey <- read.csv(paste0(refDir, "/RNA_CCNE1_HRD_status.csv"))
+  HRDkey <- driverKey[driverKey$GIN.driver == "HRD",]
+  HRDkey <- HRDkey[grep("AOCS[2-3]", HRDkey$RNA_ID, invert=T),]
+  HRDnos <- gsub(
+    "\\_.*[A-Z][A-Z]", "", gsub(
+      "AOCS_", "", HRDkey[,1]
+    )
+  )
+  CCNEkey <- driverKey[driverKey$GIN.driver == "CCNE1",]
+  CCNEkey <- CCNEkey[grep("AOCS[2-3]", CCNEkey$RNA_ID, invert=T),]
+  CCNEnos <- gsub(
+    "\\_.*[A-Z][A-Z]", "", gsub(
+      "AOCS_", "", CCNEkey[,1]
+    )
+  )
   for (i in 1:length(colnames(Counts))) {
     print(i)
     if (length(grep("FT", colnames(Counts)[i]))<1) {
@@ -276,12 +245,6 @@ for (i in 1:length(sGroups)) {
   for (n in sGroups[[i]]) {
     colnames(Counts) <- gsub(n, names(sGroups)[i], colnames(Counts))
   }
-}
-  
-# remove groups that are not needed:
-for ( r in remove_groups ) {
-  print(r)
-  Counts <- Counts[,grep(r, colnames(Counts), invert = T)] 
 }
 
 # eliminate lowly expressed genes (rows where there are less than 3 counts 
