@@ -18,7 +18,6 @@ library(org.Hs.eg.db)
 
 # define starting variables:
 project <- "hgsoc_repeats"
-expName <- "exp9"
 Type <- "custom3"
 descrip <- "find_liu_L1_regulators"
 
@@ -64,12 +63,9 @@ refDir <- paste0(projectDir, "/RNA-seq/refs/")
 rawDir <- paste0(projectDir, 
                  "/RNA-seq/raw_files/fullsamples/bowtell_primary/")
 resultsDir <- paste0(projectDir, "/RNA-seq/results")
-RobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/",
-                     expName, "/")
-newRobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/",
-                        expName, "/", descrip, "/")
-tableDir <- paste0(resultsDir, "/R/", expName,
-                  "/tables/DEplots/", descrip, "/")
+RobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/")
+newRobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/", descrip, "/")
+tableDir <- paste0(resultsDir, "/R/tables/DEplots/", descrip, "/")
 
 system(paste0("mkdir -p ", tableDir))
 system(paste0("mkdir -p ", newRobjectDir))

@@ -1,0 +1,5 @@
+Building DAG of jobs...
+MissingInputException in line 108 of /share/ScratchGeneral/jamtor/projects/hgsoc_repeats/RNA-seq/repeats_Snakefile:
+Missing input files for rule star_ribo:
+/share/ScratchGeneral/jamtor/projects/hgsoc_repeats/RNA-seq/raw_files/all_AOCS-166-2_tars_removed_1.fastq.gz
+/share/ScratchGeneral/jamtor/projects/hgsoc_repeats/RNA-seq/raw_files/all_AOCS-166-2_tars_removed_2.fastq.gz

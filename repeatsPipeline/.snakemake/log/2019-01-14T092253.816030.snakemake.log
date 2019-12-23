@@ -1,0 +1,4 @@
+Building DAG of jobs...
+MissingInputException in line 220 of /share/ScratchGeneral/jamtor/projects/hgsoc_repeats/RNA-seq/repeats_Snakefile:
+Missing input files for rule tar:
+results/star/GC/AOCS-166-2

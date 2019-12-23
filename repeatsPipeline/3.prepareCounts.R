@@ -5,7 +5,6 @@
 
 # define starting variables:
 project <- "hgsoc_repeats"
-expName <- "exp9"
 
 # define directories:
 #homeDir <- "/share/ScratchGeneral/jamtor/"
@@ -13,15 +12,13 @@ homeDir <- "/Users/jamestorpy/clusterHome"
 projectDir <- paste0(homeDir, "/projects/", 
                      project, "/")
 resultsDir <- paste0(projectDir, "/RNA-seq/results/")
-RobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/", 
-                     expName, "/")
-inDir <- paste0(resultsDir, "/htseq/", expName)
+RobjectDir <- paste0(projectDir, "/RNA-seq/Robjects/")
+inDir <- paste0(resultsDir, "/htseq/")
 plotDir <- paste0(inDir, "/plots/linePlots/")
 rawDir <- paste0(projectDir, 
                  "/RNA-seq/raw_files/fullsamples/bowtell_primary/")
-starGC_dir <- paste0(resultsDir, "/star/GC/", expName)
-starRibo_dir <- paste0(resultsDir, "/star/ribo/", 
-                       expName)
+starGC_dir <- paste0(resultsDir, "/star/GC/")
+starRibo_dir <- paste0(resultsDir, "/star/ribo/")
 
 system(paste0("mkdir -p ", RobjectDir))
 system(paste0("mkdir -p ", plotDir))
@@ -30,8 +27,9 @@ system(paste0("mkdir -p ", plotDir))
 ### 1. Check for and discard bad inputs ###
 
 # fetch counts file ids:
-compFiles <- as.character(read.table(paste0(inDir, 
-                                            "/completed_files.txt"))[,1])
+# compFiles <- as.character(read.table(paste0(inDir, 
+#                                             "/completed_files.txt"))[,1])
+compFiles <- c("")
 
 # check gc files have the same number of lines and put
 # these in a vector:
